@@ -1,111 +1,90 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/*
+ * TechFlow Dashboard — Tailwind CSS (v4, via plugin do Vite)
+ * As classes utilitárias ficam no index.html e no src/main.jsx.
+ */
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* dark: passa a funcionar pela classe .dark no <html> (controlada pelo JavaScript) */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Tema: fonte, cores "brand" e animação */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6fe;
+  --color-brand-200: #bfd3fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #6090fa;
+  --color-brand-500: #3b6cf6;
+  --color-brand-600: #2550eb;
+  --color-brand-700: #1d3fd8;
+  --color-brand-800: #1e35af;
+  --color-brand-900: #1e328a;
+  --color-brand-950: #172054;
+
+  --animate-fade-up: fade-up 0.45s ease-out both;
+  @keyframes fade-up {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+/* Botões com cursor de mão (o Tailwind v4 usa o cursor padrão) */
+button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+
+/* ---- Estilos complementares (o que o Tailwind não cobre diretamente) ---- */
+
+/* Os controles nativos (date picker, scrollbar, select) acompanham o tema */
+:root { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+
+html { scroll-behavior: smooth; }
+
+/* Estado ativo dos links da sidebar (aplicado pelo JavaScript) */
+.nav-link { color: rgb(71 85 105); }
+.nav-link:hover { background-color: rgb(241 245 249); color: rgb(15 23 42); }
+.nav-link[aria-current="page"] { background-color: #eef4ff; color: #1d3fd8; }
+.dark .nav-link { color: rgb(148 163 184); }
+.dark .nav-link:hover { background-color: rgb(30 41 59); color: #fff; }
+.dark .nav-link[aria-current="page"] { background-color: rgb(59 108 246 / 0.15); color: #93b4fd; }
+
+/* Barra de rolagem discreta */
+* { scrollbar-width: thin; scrollbar-color: rgb(148 163 184 / 0.5) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgb(148 163 184 / 0.45); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Ícone do calendário do input date visível no tema escuro */
+.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.85); }
+
+/* Microinteração: "tremida" do formulário quando há erro */
+@keyframes tf-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.tf-shake { animation: tf-shake 0.4s ease-in-out; }
+
+/* Entrada dos cards recém-criados */
+@keyframes tf-pop {
+  0% { opacity: 0; transform: scale(0.94) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.tf-pop { animation: tf-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+/* Esconde cards filtrados sem quebrar o grid */
+[data-project].is-hidden { display: none; }
+
+/* Trava a rolagem da página com menu mobile ou modal abertos */
+body.no-scroll { overflow: hidden; }
+
+/* Respeita quem prefere menos animação */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }

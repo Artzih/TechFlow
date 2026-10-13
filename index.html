@@ -1,13 +1,748 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>techflowcp</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="description" content="TechFlow — dashboard de projetos, equipes e indicadores." />
+  <title>TechFlow · Dashboard</title>
+
+  <!-- Aplica o tema salvo ANTES da renderização para evitar o "flash" de tema errado -->
+  <script>
+    (function () {
+      try {
+        var pref = localStorage.getItem('techflow-theme') || 'system';
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) { /* localStorage indisponível: segue o padrão claro */ }
+    })();
+  </script>
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+
+<body class="h-full bg-slate-50 font-sans text-slate-800 antialiased transition-colors duration-300 ease-out dark:bg-slate-950 dark:text-slate-200">
+
+  <!-- ===================== OVERLAY (menu mobile) ===================== -->
+  <div id="sidebar-overlay"
+       class="pointer-events-none fixed inset-0 z-30 bg-slate-900/50 opacity-0 backdrop-blur-sm transition-opacity duration-300 ease-out lg:hidden"
+       aria-hidden="true"></div>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside id="sidebar"
+         class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 lg:translate-x-0"
+         aria-label="Menu principal">
+
+    <div class="flex h-16 items-center justify-between gap-2 px-5">
+      <a href="#" class="group flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-md shadow-brand-500/30 transition-transform duration-300 ease-out group-hover:rotate-6 group-hover:scale-105">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </span>
+        <span class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Tech<span class="text-brand-600 dark:text-brand-400">Flow</span></span>
+      </a>
+      <button id="sidebar-close" type="button"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
+              aria-label="Fechar menu">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 pb-4 pt-2">
+      <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Geral</p>
+      <ul class="flex flex-col gap-1" id="nav-links">
+        <li>
+          <a href="#" data-nav aria-current="page"
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="#projetos" data-nav
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            Projetos
+            <span id="nav-project-count" class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 transition-colors group-hover:bg-white dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-slate-700">6</span>
+          </a>
+        </li>
+        <li>
+          <a href="#equipes" data-nav
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Equipes
+          </a>
+        </li>
+        <li>
+          <a href="#atividades" data-nav
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/></svg>
+            Tarefas
+          </a>
+        </li>
+        <li>
+          <a href="#" data-nav
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+            Relatórios
+          </a>
+        </li>
+        <li>
+          <a href="#" data-nav
+             class="nav-link group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98]">
+            <svg class="h-5 w-5 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Calendário
+          </a>
+        </li>
+      </ul>
+
+      <p class="mt-6 px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Equipes</p>
+      <ul class="flex flex-col gap-0.5" id="team-list">
+        <li data-team><a href="#equipes" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"><span class="h-2.5 w-2.5 rounded-full bg-brand-500 ring-4 ring-brand-500/15 transition-transform duration-200 group-hover:scale-125"></span>Desenvolvimento<span class="ml-auto text-xs text-slate-400">8</span></a></li>
+        <li data-team><a href="#equipes" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"><span class="h-2.5 w-2.5 rounded-full bg-violet-500 ring-4 ring-violet-500/15 transition-transform duration-200 group-hover:scale-125"></span>Design<span class="ml-auto text-xs text-slate-400">4</span></a></li>
+        <li data-team><a href="#equipes" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15 transition-transform duration-200 group-hover:scale-125"></span>Infraestrutura<span class="ml-auto text-xs text-slate-400">5</span></a></li>
+        <li data-team><a href="#equipes" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"><span class="h-2.5 w-2.5 rounded-full bg-amber-500 ring-4 ring-amber-500/15 transition-transform duration-200 group-hover:scale-125"></span>Marketing<span class="ml-auto text-xs text-slate-400">3</span></a></li>
+        <li data-team><a href="#equipes" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"><span class="h-2.5 w-2.5 rounded-full bg-rose-500 ring-4 ring-rose-500/15 transition-transform duration-200 group-hover:scale-125"></span>Dados &amp; IA<span class="ml-auto text-xs text-slate-400">6</span></a></li>
+      </ul>
+    </nav>
+
+    <!-- Card de armazenamento -->
+    <div class="m-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+      <div class="flex items-center justify-between text-xs font-semibold">
+        <span class="text-slate-700 dark:text-slate-200">Armazenamento</span>
+        <span class="text-slate-500 dark:text-slate-400">7,2 / 10 GB</span>
+      </div>
+      <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        <div class="h-full w-[72%] rounded-full bg-gradient-to-r from-brand-500 to-violet-500"></div>
+      </div>
+      <button type="button" disabled
+              class="mt-3 w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700"
+              title="Disponível no plano Pro">
+        Fazer upgrade (em breve)
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== CONTEÚDO ===================== -->
+  <div class="flex min-h-full flex-col lg:pl-72">
+
+    <!-- ===================== NAVBAR ===================== -->
+    <header class="sticky top-0 z-20 flex h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md transition-colors duration-300 dark:border-slate-800 dark:bg-slate-900/80 sm:gap-4 sm:px-6 lg:px-8">
+
+      <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        <button id="sidebar-open" type="button" aria-controls="sidebar" aria-expanded="false"
+                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
+                aria-label="Abrir menu">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        </button>
+
+        <!-- Campo de pesquisa -->
+        <form class="relative w-full max-w-md" role="search" onsubmit="return false">
+          <label for="search" class="sr-only">Pesquisar projetos</label>
+          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" type="search" autocomplete="off" placeholder="Pesquisar projetos..."
+                 class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 transition-all duration-200 ease-out hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-600 dark:focus:bg-slate-900 lg:pr-14" />
+          <kbd class="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 lg:block">Ctrl K</kbd>
+        </form>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <!-- Seletor de tema: Light | Dark | System -->
+        <div class="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800" role="group" aria-label="Tema">
+          <button type="button" data-theme-option="light" aria-pressed="false" title="Tema claro"
+                  class="theme-btn flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 md:px-2.5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <span class="hidden xl:inline">Light</span>
+          </button>
+          <button type="button" data-theme-option="dark" aria-pressed="false" title="Tema escuro"
+                  class="theme-btn flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 md:px-2.5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span class="hidden xl:inline">Dark</span>
+          </button>
+          <button type="button" data-theme-option="system" aria-pressed="false" title="Seguir o sistema"
+                  class="theme-btn flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 md:px-2.5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span class="hidden xl:inline">System</span>
+          </button>
+        </div>
+
+        <!-- Notificações -->
+        <button type="button" aria-label="Notificações"
+                class="group relative hidden h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:inline-flex">
+          <svg class="h-5 w-5 origin-top transition-transform duration-300 group-hover:rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900"></span>
+        </button>
+
+        <!-- Usuário + dropdown -->
+        <div class="relative" id="user-menu">
+          <button id="user-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="user-dropdown"
+                  class="flex items-center gap-2.5 rounded-xl p-1 transition-all duration-200 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98] dark:hover:bg-slate-800 md:pr-2.5">
+            <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-violet-600 text-xs font-bold text-white"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <span class="hidden text-left leading-tight md:block">
+              <span class="block text-sm font-semibold text-slate-900 dark:text-white">Usuário</span>
+              <span class="block text-xs text-slate-500 dark:text-slate-400">Product Lead</span>
+            </span>
+            <svg id="user-chevron" class="hidden h-4 w-4 text-slate-400 transition-transform duration-200 ease-out md:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+
+          <div id="user-dropdown" role="menu" aria-labelledby="user-menu-button"
+               class="pointer-events-none absolute right-0 mt-2 w-64 origin-top-right -translate-y-1 scale-95 rounded-2xl border border-slate-200 bg-white p-1.5 opacity-0 shadow-xl shadow-slate-900/10 transition-all duration-200 ease-out dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/40">
+            <div class="flex items-center gap-3 px-3 py-2.5">
+              <span class="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-violet-600 text-sm font-bold text-white"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">Usuário</p>
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400">usuario@techflow.com</p>
+              </div>
+            </div>
+            <div class="my-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+            <a href="#" role="menuitem" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+              <svg class="h-4 w-4 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Meu perfil
+            </a>
+            <a href="#" role="menuitem" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:bg-slate-800">
+              <svg class="h-4 w-4 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+              Configurações
+            </a>
+            <button type="button" role="menuitem" disabled
+                    class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-slate-200">
+              <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Integrações
+              <span class="ml-auto rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase dark:bg-slate-800">Em breve</span>
+            </button>
+            <div class="my-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+            <a href="#" role="menuitem" class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-rose-600 transition-colors duration-150 hover:bg-rose-50 focus:bg-rose-50 focus:outline-none active:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-500/10 dark:focus:bg-rose-500/10">
+              <svg class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              Sair
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===================== ÁREA PRINCIPAL ===================== -->
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 2xl:max-w-[100rem]">
+
+      <!-- Cabeçalho da página -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p id="today" class="text-sm font-medium text-slate-500 dark:text-slate-400">&nbsp;</p>
+          <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Bem-vindo de volta</h1>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Acompanhe projetos, equipes e indicadores da TechFlow.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" disabled title="Exportação disponível em breve"
+                  class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:disabled:hover:bg-slate-900">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Exportar
+          </button>
+          <button type="button" data-open-modal
+                  class="group inline-flex h-10 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/40 active:translate-y-0 active:scale-[0.98]">
+            <svg class="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Novo projeto
+          </button>
+        </div>
+      </div>
+
+      <!-- ===================== INDICADORES ===================== -->
+      <section aria-label="Indicadores" class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:gap-6">
+
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-500/40">
+          <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand-500/10 transition-transform duration-500 ease-out group-hover:scale-150"></div>
+          <div class="relative flex items-center justify-between">
+            <span class="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 dark:bg-brand-500/15 dark:text-brand-400">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </span>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">+12%</span>
+          </div>
+          <p class="relative mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">Projetos ativos</p>
+          <p class="relative mt-1 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" id="kpi-active" data-count>0</p>
+        </article>
+
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40">
+          <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-emerald-500/10 transition-transform duration-500 ease-out group-hover:scale-150"></div>
+          <div class="relative flex items-center justify-between">
+            <span class="grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 dark:bg-emerald-500/15 dark:text-emerald-400">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+            </span>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">+2 no mês</span>
+          </div>
+          <p class="relative mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">Projetos concluídos</p>
+          <p class="relative mt-1 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" id="kpi-done" data-count>0</p>
+        </article>
+
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-500/40">
+          <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-500/10 transition-transform duration-500 ease-out group-hover:scale-150"></div>
+          <div class="relative flex items-center justify-between">
+            <span class="grid h-11 w-11 place-items-center rounded-xl bg-amber-50 text-amber-600 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 dark:bg-amber-500/15 dark:text-amber-400">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/></svg>
+            </span>
+            <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">5 vencem hoje</span>
+          </div>
+          <p class="relative mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">Tarefas pendentes</p>
+          <p class="relative mt-1 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" id="kpi-tasks" data-count>0</p>
+        </article>
+
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-violet-500/40">
+          <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/10 transition-transform duration-500 ease-out group-hover:scale-150"></div>
+          <div class="relative flex items-center justify-between">
+            <span class="grid h-11 w-11 place-items-center rounded-xl bg-violet-50 text-violet-600 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 dark:bg-violet-500/15 dark:text-violet-400">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">26 pessoas</span>
+          </div>
+          <p class="relative mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">Equipes</p>
+          <p class="relative mt-1 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" id="kpi-teams" data-count>0</p>
+        </article>
+      </section>
+
+      <!-- ===================== PROJETOS ===================== -->
+      <section id="projetos" class="mt-10 scroll-mt-24" aria-labelledby="projects-title">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <h2 id="projects-title" class="text-lg font-bold text-slate-900 dark:text-white">Projetos</h2>
+            <span id="projects-visible" class="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">6</span>
+          </div>
+
+          <!-- Filtros usando peer-checked -->
+          <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Filtrar por status">
+            <label class="cursor-pointer">
+              <input type="radio" name="status-filter" value="all" class="peer sr-only" checked />
+              <span class="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:text-slate-900 peer-checked:border-slate-900 peer-checked:bg-slate-900 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-slate-900">Todos</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="status-filter" value="andamento" class="peer sr-only" />
+              <span class="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:text-slate-900 peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white">Em andamento</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="status-filter" value="concluido" class="peer sr-only" />
+              <span class="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:text-slate-900 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white">Concluídos</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="status-filter" value="atrasado" class="peer sr-only" />
+              <span class="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:text-slate-900 peer-checked:border-rose-600 peer-checked:bg-rose-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white">Atrasados</span>
+            </label>
+          </div>
+        </div>
+
+        <!--
+          Grid de projetos: grid-cols-* responsivo + col-span-* / row-span-* para tamanhos diferentes.
+          grid-flow-dense preenche os espaços vazios deixados pelos cards maiores.
+        -->
+        <div id="projects-grid"
+             class="mt-5 grid grid-flow-dense auto-rows-[minmax(13rem,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 2xl:gap-6">
+
+          <!-- Projeto 1 — destaque: 2 colunas x 2 linhas -->
+          <article data-project data-status="andamento" data-pending="18"
+                   class="project-card group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-violet-700 p-6 text-white shadow-xl shadow-brand-700/20 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-brand-700/30 md:col-span-2 lg:row-span-2 sm:p-8">
+            <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-2xl transition-transform duration-700 ease-out group-hover:scale-125"></div>
+            <div class="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-violet-400/20 blur-2xl"></div>
+
+            <div class="relative">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold backdrop-blur">Desenvolvimento</span>
+                  <span class="rounded-full bg-rose-400/25 px-2.5 py-1 text-xs font-semibold text-rose-50">Prioridade alta</span>
+                </div>
+                <span class="flex items-center gap-1.5 text-xs font-semibold text-white/80"><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-300"></span>Em andamento</span>
+              </div>
+              <h3 data-title class="mt-6 text-2xl font-extrabold tracking-tight sm:text-3xl">Portal do Cliente 2.0</h3>
+              <p class="mt-2 max-w-lg text-sm leading-relaxed text-white/75">Reconstrução do portal com autenticação única, área de faturas e abertura de chamados em tempo real.</p>
+            </div>
+
+            <ul class="relative mt-6 grid gap-2 text-sm sm:grid-cols-2">
+              <li class="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2"><svg class="h-4 w-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Login unificado (SSO)</li>
+              <li class="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2"><svg class="h-4 w-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Área de faturas</li>
+              <li class="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2"><svg class="h-4 w-4 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>Chamados em tempo real</li>
+              <li class="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2"><svg class="h-4 w-4 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>App de notificações</li>
+            </ul>
+
+            <div class="relative mt-6">
+              <div class="flex items-center justify-between text-sm font-semibold"><span>Progresso</span><span>68%</span></div>
+              <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-white/20"><div class="h-full w-[68%] rounded-full bg-white transition-all duration-700 ease-out"></div></div>
+              <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex -space-x-2">
+                  <span class="grid h-8 w-8 place-items-center rounded-full bg-amber-300 text-[11px] font-bold text-amber-900 ring-2 ring-brand-700 transition-transform duration-200 hover:z-10 hover:-translate-y-1"></span>
+                  <span class="grid h-8 w-8 place-items-center rounded-full bg-emerald-300 text-[11px] font-bold text-emerald-900 ring-2 ring-brand-700 transition-transform duration-200 hover:z-10 hover:-translate-y-1"></span>
+                  <span class="grid h-8 w-8 place-items-center rounded-full bg-rose-300 text-[11px] font-bold text-rose-900 ring-2 ring-brand-700 transition-transform duration-200 hover:z-10 hover:-translate-y-1"></span>
+                  <span class="grid h-8 w-8 place-items-center rounded-full bg-white/20 text-[11px] font-bold ring-2 ring-brand-700">+5</span>
+                </div>
+                <span class="flex items-center gap-1.5 text-sm text-white/80" data-responsible="Gerente de Projetos">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  Prazo: <time datetime="2026-11-28">28/11/2026</time>
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Projeto 2 — padrão -->
+          <article data-project data-status="andamento" data-pending="12"
+                   class="project-card group flex flex-col rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-500/40">
+            <div class="flex items-center justify-between">
+              <span class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">Mobile</span>
+              <svg class="h-5 w-5 -translate-x-1 text-slate-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:text-brand-600 group-hover:opacity-100 dark:group-hover:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </div>
+            <h3 data-title class="mt-4 font-bold text-slate-900 dark:text-white">App Field Service</h3>
+            <p class="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">App para técnicos registrarem visitas, fotos e assinaturas offline.</p>
+            <div class="mt-auto pt-5">
+              <div class="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400"><span>Em andamento</span><span>42%</span></div>
+              <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[42%] rounded-full bg-sky-500"></div></div>
+              <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span data-responsible="Tech Lead Mobile" class="font-medium text-slate-700 dark:text-slate-300">Tech Lead Mobile</span>
+                <time datetime="2026-12-15">15/12/2026</time>
+              </div>
+            </div>
+          </article>
+
+          <!-- Projeto 3 — padrão (atrasado) -->
+          <article data-project data-status="atrasado" data-pending="7"
+                   class="project-card group flex flex-col rounded-3xl border border-rose-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-rose-300 hover:shadow-xl hover:shadow-rose-500/10 dark:border-rose-500/30 dark:bg-slate-900 dark:hover:border-rose-500/60">
+            <div class="flex items-center justify-between">
+              <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Infraestrutura</span>
+              <span class="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Atrasado
+              </span>
+            </div>
+            <h3 data-title class="mt-4 font-bold text-slate-900 dark:text-white">Migração para Cloud</h3>
+            <p class="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">Mover servidores on-premise para a nuvem com zero downtime.</p>
+            <div class="mt-auto pt-5">
+              <div class="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400"><span>Atrasado</span><span>81%</span></div>
+              <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[81%] rounded-full bg-rose-500"></div></div>
+              <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span data-responsible="Engenharia de Infra" class="font-medium text-slate-700 dark:text-slate-300">Engenharia de Infra</span>
+                <time datetime="2026-10-05" class="font-semibold text-rose-600 dark:text-rose-400">05/10/2026</time>
+              </div>
+            </div>
+          </article>
+
+          <!-- Projeto 4 — alto: 2 linhas, com checklist (peer-checked) -->
+          <article data-project data-status="andamento" data-pending="9"
+                   class="project-card group flex flex-col rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-500/40 md:row-span-2">
+            <div class="flex items-center justify-between">
+              <span class="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">Dados &amp; IA</span>
+              <span class="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Média</span>
+            </div>
+            <h3 data-title class="mt-4 font-bold text-slate-900 dark:text-white">Automação de Relatórios</h3>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Relatórios semanais gerados automaticamente a partir do data lake.</p>
+
+            <!-- Checklist: o texto é riscado com peer-checked -->
+            <ul class="mt-5 flex flex-col gap-1" aria-label="Tarefas do projeto">
+              <li><label class="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <input type="checkbox" checked data-task class="peer h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-brand-600" />
+                <span class="text-sm text-slate-700 transition-all duration-200 peer-checked:text-slate-400 peer-checked:line-through dark:text-slate-300 dark:peer-checked:text-slate-500">Mapear fontes de dados</span>
+              </label></li>
+              <li><label class="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <input type="checkbox" checked data-task class="peer h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-brand-600" />
+                <span class="text-sm text-slate-700 transition-all duration-200 peer-checked:text-slate-400 peer-checked:line-through dark:text-slate-300 dark:peer-checked:text-slate-500">Criar pipeline ETL</span>
+              </label></li>
+              <li><label class="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <input type="checkbox" data-task class="peer h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-brand-600" />
+                <span class="text-sm text-slate-700 transition-all duration-200 peer-checked:text-slate-400 peer-checked:line-through dark:text-slate-300 dark:peer-checked:text-slate-500">Template do relatório</span>
+              </label></li>
+              <li><label class="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <input type="checkbox" data-task class="peer h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-brand-600" />
+                <span class="text-sm text-slate-700 transition-all duration-200 peer-checked:text-slate-400 peer-checked:line-through dark:text-slate-300 dark:peer-checked:text-slate-500">Agendar envio por e-mail</span>
+              </label></li>
+            </ul>
+
+            <div class="mt-auto pt-5">
+              <div class="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400"><span>Checklist</span><span data-checklist-progress>2/4</span></div>
+              <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div data-checklist-bar class="h-full w-1/2 rounded-full bg-rose-500 transition-all duration-500 ease-out"></div></div>
+              <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span data-responsible="Analista de Dados" class="font-medium text-slate-700 dark:text-slate-300">Analista de Dados</span>
+                <time datetime="2026-11-10">10/11/2026</time>
+              </div>
+            </div>
+          </article>
+
+          <!-- Projeto 5 — padrão (concluído) -->
+          <article data-project data-status="concluido" data-pending="0"
+                   class="project-card group flex flex-col rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/40">
+            <div class="flex items-center justify-between">
+              <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Marketing</span>
+              <span class="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white transition-transform duration-300 group-hover:scale-110"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+            <h3 data-title class="mt-4 font-bold text-slate-900 dark:text-white">Landing Black Friday</h3>
+            <p class="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">Página de campanha com contador regressivo e testes A/B.</p>
+            <div class="mt-auto pt-5">
+              <div class="flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400"><span>Concluído</span><span>100%</span></div>
+              <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-full rounded-full bg-emerald-500"></div></div>
+              <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span data-responsible="Analista de Marketing" class="font-medium text-slate-700 dark:text-slate-300">Analista de Marketing</span>
+                <time datetime="2026-10-01">01/10/2026</time>
+              </div>
+            </div>
+          </article>
+
+          <!-- Projeto 6 — largo: 2 colunas -->
+          <article data-project data-status="concluido" data-pending="0"
+                   class="project-card group flex flex-col gap-5 rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-violet-500/40 sm:flex-row sm:items-center md:col-span-2">
+            <div class="grid h-24 w-full shrink-0 grid-cols-3 gap-1.5 sm:h-full sm:min-h-[8rem] sm:w-36" aria-hidden="true">
+              <span class="rounded-xl bg-violet-500 transition-transform duration-300 group-hover:-translate-y-1"></span>
+              <span class="rounded-xl bg-brand-500 transition-transform delay-75 duration-300 group-hover:-translate-y-1"></span>
+              <span class="rounded-xl bg-rose-400 transition-transform delay-100 duration-300 group-hover:-translate-y-1"></span>
+              <span class="col-span-2 rounded-xl bg-slate-200 dark:bg-slate-700"></span>
+              <span class="rounded-xl bg-amber-400 transition-transform delay-150 duration-300 group-hover:-translate-y-1"></span>
+            </div>
+            <div class="flex min-w-0 flex-1 flex-col">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Design</span>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Concluído</span>
+              </div>
+              <h3 data-title class="mt-3 font-bold text-slate-900 dark:text-white">Design System Aurora</h3>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Biblioteca de componentes, tokens de cor e guia de acessibilidade para todos os produtos.</p>
+              <div class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span><span data-responsible="Designer de Produto" class="font-medium text-slate-700 dark:text-slate-300">Designer de Produto</span> · 48 componentes</span>
+                <time datetime="2026-09-30">30/09/2026</time>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card de ação: novo projeto -->
+          <button type="button" data-open-modal id="new-project-card"
+                  class="group flex min-h-[13rem] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-300 p-5 text-slate-500 transition-all duration-300 ease-out hover:border-brand-400 hover:bg-brand-50/50 hover:text-brand-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/30 active:scale-[0.98] dark:border-slate-700 dark:text-slate-400 dark:hover:border-brand-500 dark:hover:bg-brand-500/5 dark:hover:text-brand-300">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 transition-all duration-300 group-hover:rotate-90 group-hover:bg-brand-600 group-hover:text-white dark:bg-slate-800">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span class="text-sm font-semibold">Adicionar projeto</span>
+          </button>
+        </div>
+
+        <!-- Estado vazio da busca/filtro -->
+        <div id="projects-empty" class="mt-5 hidden flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 px-6 py-12 text-center dark:border-slate-700">
+          <svg class="h-10 w-10 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <p class="mt-3 font-semibold text-slate-700 dark:text-slate-200">Nenhum projeto encontrado</p>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Tente outro termo de busca ou mude o filtro.</p>
+        </div>
+      </section>
+
+      <!-- ===================== FEED + EQUIPES ===================== -->
+      <section class="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-3 2xl:gap-6">
+
+        <div id="atividades" class="scroll-mt-24 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6 lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Atividade recente</h2>
+            <a href="#" class="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-400 dark:hover:text-brand-300">Ver tudo</a>
+          </div>
+          <ol id="activity-feed" class="mt-5 flex flex-col">
+            <li class="group relative flex gap-4 pb-6 last:pb-0">
+              <span class="absolute left-[15px] top-9 h-[calc(100%-2.25rem)] w-px bg-slate-200 group-last:hidden dark:bg-slate-800"></span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">MK</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold text-slate-900 dark:text-white">Equipe de Marketing</span> concluiu <span class="font-semibold">Landing Black Friday</span></p>
+                <p class="mt-0.5 text-xs text-slate-400">há 2 horas</p>
+              </div>
+            </li>
+            <li class="group relative flex gap-4 pb-6 last:pb-0">
+              <span class="absolute left-[15px] top-9 h-[calc(100%-2.25rem)] w-px bg-slate-200 group-last:hidden dark:bg-slate-800"></span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-100 text-[11px] font-bold text-rose-800 dark:bg-rose-500/20 dark:text-rose-300">IN</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold text-slate-900 dark:text-white">Engenharia de Infra</span> pediu extensão de prazo em <span class="font-semibold">Migração para Cloud</span></p>
+                <p class="mt-0.5 text-xs text-slate-400">há 5 horas</p>
+              </div>
+            </li>
+            <li class="group relative flex gap-4 pb-6 last:pb-0">
+              <span class="absolute left-[15px] top-9 h-[calc(100%-2.25rem)] w-px bg-slate-200 group-last:hidden dark:bg-slate-800"></span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">GP</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold text-slate-900 dark:text-white">Gerente de Projetos</span> adicionou 3 tarefas em <span class="font-semibold">Portal do Cliente 2.0</span></p>
+                <p class="mt-0.5 text-xs text-slate-400">ontem</p>
+              </div>
+            </li>
+            <li class="group relative flex gap-4 pb-6 last:pb-0">
+              <span class="absolute left-[15px] top-9 h-[calc(100%-2.25rem)] w-px bg-slate-200 group-last:hidden dark:bg-slate-800"></span>
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-800 dark:bg-violet-500/20 dark:text-violet-300">DS</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm text-slate-700 dark:text-slate-300"><span class="font-semibold text-slate-900 dark:text-white">Equipe de Design</span> publicou a versão 1.0 do <span class="font-semibold">Design System Aurora</span></p>
+                <p class="mt-0.5 text-xs text-slate-400">há 2 semanas</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div id="equipes" class="scroll-mt-24 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white">Carga das equipes</h2>
+          <ul class="mt-5 flex flex-col gap-4">
+            <li>
+              <div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-700 dark:text-slate-300">Desenvolvimento</span><span class="text-slate-500">86%</span></div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[86%] rounded-full bg-brand-500"></div></div>
+            </li>
+            <li>
+              <div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-700 dark:text-slate-300">Design</span><span class="text-slate-500">54%</span></div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[54%] rounded-full bg-violet-500"></div></div>
+            </li>
+            <li>
+              <div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-700 dark:text-slate-300">Infraestrutura</span><span class="text-slate-500">92%</span></div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[92%] rounded-full bg-emerald-500"></div></div>
+            </li>
+            <li>
+              <div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-700 dark:text-slate-300">Marketing</span><span class="text-slate-500">38%</span></div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[38%] rounded-full bg-amber-500"></div></div>
+            </li>
+            <li>
+              <div class="flex items-center justify-between text-sm"><span class="font-medium text-slate-700 dark:text-slate-300">Dados &amp; IA</span><span class="text-slate-500">71%</span></div>
+              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[71%] rounded-full bg-rose-500"></div></div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <footer class="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-400 dark:border-slate-800">
+        TechFlow Dashboard · Checkpoint 5 — FrontEnd Design · FIAP
+      </footer>
+    </main>
+  </div>
+
+  <!-- ===================== MODAL: NOVO PROJETO ===================== -->
+  <div id="project-modal" class="fixed inset-0 z-50 hidden items-end justify-center sm:items-center sm:p-4"
+       role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-backdrop" data-close-modal class="absolute inset-0 bg-slate-900/60 opacity-0 backdrop-blur-sm transition-opacity duration-300 ease-out"></div>
+
+    <div id="modal-panel"
+         class="relative flex max-h-[94vh] w-full translate-y-8 flex-col overflow-hidden rounded-t-3xl bg-white opacity-0 shadow-2xl transition-all duration-300 ease-out dark:bg-slate-900 sm:max-w-2xl sm:translate-y-4 sm:scale-95 sm:rounded-3xl">
+
+      <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:px-7 sm:py-5">
+        <div>
+          <h2 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Novo projeto</h2>
+          <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Preencha os dados para cadastrar o projeto.</p>
+        </div>
+        <button type="button" data-close-modal aria-label="Fechar"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 hover:rotate-90 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-90 dark:hover:bg-slate-800 dark:hover:text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="project-form" novalidate class="flex min-h-0 flex-1 flex-col">
+        <div class="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+
+          <!-- Alerta geral do formulário -->
+          <div id="form-alert" class="mb-5 hidden items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300" role="alert">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span id="form-alert-text">Corrija os campos destacados.</span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+            <!-- Nome -->
+            <div data-field="nome" class="sm:col-span-2">
+              <label for="nome" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Nome do projeto <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <input id="nome" name="nome" type="text" maxlength="60" placeholder="Ex.: Portal do Parceiro"
+                       class="form-control h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 ease-out hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600" />
+                <span data-icon class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"></span>
+              </div>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </div>
+
+            <!-- Responsável -->
+            <div data-field="responsavel">
+              <label for="responsavel" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Responsável <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <select id="responsavel" name="responsavel"
+                        class="form-control h-11 w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm text-slate-900 transition-all duration-200 ease-out hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600">
+                  <option value="">Selecione...</option>
+                  <option>Gerente de Projetos</option>
+                  <option>Engenharia de Infra</option>
+                  <option>Analista de Marketing</option>
+                  <option>Designer de Produto</option>
+                  <option>Tech Lead Mobile</option>
+                  <option>Analista de Dados</option>
+                </select>
+                <span data-icon class="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2"></span>
+                <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </div>
+
+            <!-- Categoria -->
+            <div data-field="categoria">
+              <label for="categoria" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Categoria <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <select id="categoria" name="categoria"
+                        class="form-control h-11 w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm text-slate-900 transition-all duration-200 ease-out hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600">
+                  <option value="">Selecione...</option>
+                  <option>Desenvolvimento</option>
+                  <option>Mobile</option>
+                  <option>Design</option>
+                  <option>Infraestrutura</option>
+                  <option>Marketing</option>
+                  <option>Dados &amp; IA</option>
+                </select>
+                <span data-icon class="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2"></span>
+                <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </div>
+
+            <!-- Prioridade (peer-checked) -->
+            <fieldset data-field="prioridade">
+              <legend class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Prioridade <span class="text-rose-500">*</span></legend>
+              <div class="priority-group grid grid-cols-3 gap-2 rounded-xl transition-all duration-200">
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioridade" value="Baixa" class="peer sr-only" />
+                  <span class="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-emerald-400 hover:text-emerald-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-500/20 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:peer-checked:bg-emerald-500/15 dark:peer-checked:text-emerald-300">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>Baixa
+                  </span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioridade" value="Média" class="peer sr-only" />
+                  <span class="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-amber-400 hover:text-amber-700 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-focus-visible:ring-4 peer-focus-visible:ring-amber-500/20 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:peer-checked:bg-amber-500/15 dark:peer-checked:text-amber-300">
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>Média
+                  </span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="prioridade" value="Alta" class="peer sr-only" />
+                  <span class="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-rose-400 hover:text-rose-700 peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-focus-visible:ring-4 peer-focus-visible:ring-rose-500/20 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:peer-checked:bg-rose-500/15 dark:peer-checked:text-rose-300">
+                    <span class="h-2 w-2 rounded-full bg-rose-500"></span>Alta
+                  </span>
+                </label>
+              </div>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </fieldset>
+
+            <!-- Prazo -->
+            <div data-field="prazo">
+              <label for="prazo" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Prazo <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <input id="prazo" name="prazo" type="date"
+                       class="form-control h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-900 transition-all duration-200 ease-out hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600" />
+              </div>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </div>
+
+            <!-- Descrição -->
+            <div data-field="descricao" class="sm:col-span-2">
+              <div class="mb-1.5 flex items-center justify-between">
+                <label for="descricao" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Descrição <span class="text-rose-500">*</span></label>
+                <span id="descricao-count" class="text-xs tabular-nums text-slate-400">0/300</span>
+              </div>
+              <textarea id="descricao" name="descricao" rows="4" maxlength="300" placeholder="Objetivo, escopo e entregas principais..."
+                        class="form-control w-full resize-y rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 ease-out hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600"></textarea>
+              <p data-message class="mt-1.5 hidden text-xs font-medium"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+          <button type="button" data-close-modal
+                  class="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            Cancelar
+          </button>
+          <button type="submit" id="submit-btn"
+                  class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition-all duration-200 ease-out hover:bg-brand-700 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none disabled:hover:bg-slate-400 dark:disabled:bg-slate-700">
+            <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".3" stroke-width="3"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+            <span id="submit-label">Salvar projeto</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toast-region" class="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col items-center gap-2 sm:inset-x-auto sm:right-6 sm:items-end" aria-live="polite"></div>
+
+  <!-- JavaScript puro (o Vite também carrega o Tailwind importado em src/index.css) -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
